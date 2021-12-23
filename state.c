@@ -88,9 +88,10 @@ void state_destroy() { /* nothing to do */
  * Returns:
  *  new i-node's number if successfully created, -1 otherwise
  */
+//Altered it to work with the vector of blocks;
 int inode_create(inode_type n_type) {
     for (int inumber = 0; inumber < INODE_TABLE_SIZE; inumber++) {
-        if ((inumber * (int) sizeof(allocation_state_t)) == 0) {
+        if ((inumber * (int) sizeof(allocation_state_t) % BLOCK_SIZE) == 0) {
             insert_delay(); // simulate storage access delay (to freeinode_ts)
         }
 
@@ -111,7 +112,7 @@ int inode_create(inode_type n_type) {
                 }
 
                 inode_table[inumber].i_size = BLOCK_SIZE;
-                inode_table[inumber].i_data_block[0] = b;
+                inode_table[inumber].i_data_block[0] = b;  
 
                 dir_entry_t *dir_entry = (dir_entry_t *)data_block_get(b);
                 if (dir_entry == NULL) {
@@ -141,11 +142,11 @@ int inode_create(inode_type n_type) {
  *  - inumber: i-node's number
  * Returns: 0 if successful, -1 if failed
  */
+//Altered it to work with the vector of blocks;
 int inode_delete(int inumber) {
     // simulate storage access delay (to i-node and freeinode_ts)
     insert_delay();
     insert_delay();
-
     if (!valid_inumber(inumber) || freeinode_ts[inumber] == FREE) {
         return -1;
     }
@@ -153,8 +154,18 @@ int inode_delete(int inumber) {
     freeinode_ts[inumber] = FREE;
 
     if (inode_table[inumber].i_size > 0) {
-        if (data_block_free(inode_table[inumber].i_data_block) == -1) {
-            return -1;
+        for(int i=0; i< 10; i++){
+            if(inode_table[inumber].i_data_block[i] != -1){
+                if (data_block_free(inode_table[inumber].i_data_block[i]) == -1) {
+                    return -1;
+                }
+            }
+        }
+        if(inode_table[inumber].i_data_block[10] !=-1){
+            if (free_reference_block(inode_table[inumber].i_data_block[10]) == -1) {
+                return -1;
+            }
+            inode_table[inumber].i_data_block[10] = -1;
         }
     }
     return 0;
@@ -280,6 +291,29 @@ int data_block_free(int block_number) {
     free_blocks[block_number] = FREE;
     return 0;
 }
+
+//Added function to free the reference block;
+int free_reference_block(int block_number){
+    bool end = false;
+    int index = 0;
+    if(!valid_block_number(block_number)){
+        return -1;
+    }
+    int* pointer = (int*) data_block_get(block_number);
+    while(!end){
+            if(pointer[index] != -1){
+                if(data_block_free(pointer[index]) == -1){
+                    return -1;
+                }
+                index++;
+            }
+            else{
+                end = true;
+            }
+        }
+    return 0;
+}
+
 
 /* Returns a pointer to the contents of a given block
  * Input:

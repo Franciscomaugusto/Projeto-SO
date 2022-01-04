@@ -88,7 +88,6 @@ void state_destroy() { /* nothing to do */
  * Returns:
  *  new i-node's number if successfully created, -1 otherwise
  */
-//Altered it to work with the vector of blocks;
 int inode_create(inode_type n_type) {
     for (int inumber = 0; inumber < INODE_TABLE_SIZE; inumber++) {
         if ((inumber * (int) sizeof(allocation_state_t) % BLOCK_SIZE) == 0) {
@@ -126,7 +125,7 @@ int inode_create(inode_type n_type) {
             } else {
                 /* In case of a new file, simply sets its size to 0 */
                 inode_table[inumber].i_size = 0;
-                for(int i=0; i<10; i++){
+                for(int i=0; i<=10; i++){
                     inode_table[inumber].i_data_block[i] = -1;
                 }
             }
@@ -142,7 +141,6 @@ int inode_create(inode_type n_type) {
  *  - inumber: i-node's number
  * Returns: 0 if successful, -1 if failed
  */
-//Altered it to work with the vector of blocks;
 int inode_delete(int inumber) {
     // simulate storage access delay (to i-node and freeinode_ts)
     insert_delay();
@@ -292,7 +290,7 @@ int data_block_free(int block_number) {
     return 0;
 }
 
-//Added function to free the reference block;
+
 int free_reference_block(int block_number){
     bool end = false;
     int index = 0;
